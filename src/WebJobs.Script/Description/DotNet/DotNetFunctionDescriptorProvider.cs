@@ -200,15 +200,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             {
                 return false;
             }
-            var resultBinding = returnBinding as IResultProcessingBinding;
-            if (resultBinding != null)
-            {
-                if (resultBinding.CanProcessResult(true))
-                {
-                    // The trigger binding (ie, httpTrigger) will handle the return.
-                    return false;
-                }
-            }
 
             if (typeof(Task).IsAssignableFrom(functionReturnType))
             {

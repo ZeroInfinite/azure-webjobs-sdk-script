@@ -38,7 +38,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         private Func<Task> _reloadScript;
         private Action _onReferencesChanged;
         private Action _restorePackages;
-        private Action<MethodInfo, object[], object[], object> _resultProcessor;
         private string[] _watchedFileTypes;
         private int _compilerErrorCount;
 
@@ -62,8 +61,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             _triggerInputName = functionMetadata.Bindings.FirstOrDefault(b => b.IsTrigger).Name;
 
             InitializeFileWatcher();
-
-            _resultProcessor = CreateResultProcessor();
 
             _functionLoader = new FunctionLoader<MethodInfo>(CreateFunctionTarget);
 
@@ -252,7 +249,7 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             }
         }
 
-        protected override async Task InvokeCore(object[] parameters, FunctionInvocationContext context)
+        protected override async Task<object> InvokeCore(object[] parameters, FunctionInvocationContext context)
         {
             // Separate system parameters from the actual method parameters
             object[] originalParameters = parameters;
@@ -271,23 +268,13 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 originalParameters[i] = parameters[i];
             }
 
+            // unwrap the task
             if (result is Task)
             {
                 result = await ((Task)result).ContinueWith(t => GetTaskResult(t), TaskContinuationOptions.ExecuteSynchronously);
             }
 
-            if (result != null)
-            {
-                _resultProcessor(function, parameters, systemParameters, result);
-            }
-
-            // if a return value binding was specified, copy the return value
-            // into the output binding slot (by convention the last parameter)
-            var returnValueBinding = Metadata.Bindings.SingleOrDefault(p => p.IsReturn);
-            if (returnValueBinding != null && !(returnValueBinding is IResultProcessingBinding))
-            {
-                originalParameters[originalParameters.Length - 1] = result;
-            }
+            return result;
         }
 
         private async Task<MethodInfo> CreateFunctionTarget(CancellationToken cancellationToken)
@@ -473,31 +460,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             {
                 _functionLoader.Dispose();
             }
-        }
-
-        private Action<MethodInfo, object[], object[], object> CreateResultProcessor()
-        {
-            var bindings = _inputBindings.Union(_outputBindings).OfType<IResultProcessingBinding>();
-
-            Action<MethodInfo, object[], object[], object> processor = null;
-            if (bindings.Any())
-            {
-                processor = (function, args, systemArgs, result) =>
-                {
-                    ParameterInfo[] parameters = function.GetParameters();
-                    IDictionary<string, object> functionArguments = parameters.ToDictionary(p => p.Name, p => args[p.Position]);
-                    foreach (var processingBinding in bindings)
-                    {
-                        if (processingBinding.CanProcessResult(result))
-                        {
-                            processingBinding.ProcessResult(functionArguments, systemArgs, _triggerInputName, result);
-                            break;
-                        }
-                    }
-                };
-            }
-
-            return processor ?? ((_, __, ___, ____) => { /*noop*/ });
         }
     }
 }
