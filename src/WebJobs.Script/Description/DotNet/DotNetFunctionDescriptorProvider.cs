@@ -156,14 +156,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                     descriptors.Add(new ParameterDescriptor(ScriptConstants.SystemExecutionContextParameterName, typeof(ExecutionContext)));
                 }
 
-                // If we have an HTTP trigger binding but no parameter binds to the raw HttpRequestMessage,
-                // add it as a system parameter so it is accessible later in the pipeline.
-                if (string.Compare(triggerMetadata.Type, "httptrigger", StringComparison.OrdinalIgnoreCase) == 0 &&
-                    !descriptors.Any(p => p.Type == typeof(HttpRequestMessage)))
-                {
-                    descriptors.Add(new ParameterDescriptor(ScriptConstants.SystemTriggerParameterName, typeof(HttpRequestMessage)));
-                }
-
                 if (TryCreateReturnValueParameterDescriptor(functionTarget.ReturnType, bindings, out descriptor))
                 {
                     // If a return value binding has been specified, set up an output

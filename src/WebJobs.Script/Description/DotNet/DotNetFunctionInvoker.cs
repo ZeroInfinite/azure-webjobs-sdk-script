@@ -256,7 +256,6 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             MethodInfo function = await GetFunctionTargetAsync();
 
             int actualParameterCount = function.GetParameters().Length;
-            object[] systemParameters = parameters.Skip(actualParameterCount).ToArray();
             parameters = parameters.Take(actualParameterCount).ToArray();
 
             object result = function.Invoke(null, parameters);
