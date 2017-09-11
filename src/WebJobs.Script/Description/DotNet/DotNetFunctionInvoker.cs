@@ -267,7 +267,13 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 originalParameters[i] = parameters[i];
             }
 
-            return Unwrap(result);
+            // unwrap the task
+            if (result is Task)
+            {
+                result = await ((Task)result).ContinueWith(t => GetTaskResult(t), TaskContinuationOptions.ExecuteSynchronously);
+            }
+
+            return result;
         }
 
         internal static async Task<object> Unwrap(object result)
