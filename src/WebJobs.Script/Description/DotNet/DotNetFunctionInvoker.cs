@@ -267,6 +267,11 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 originalParameters[i] = parameters[i];
             }
 
+            return Unwrap(result);
+        }
+
+        internal static async Task<object> Unwrap(object result)
+        {
             // unwrap the task
             if (result is Task)
             {

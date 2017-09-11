@@ -186,13 +186,12 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         internal static bool TryCreateReturnValueParameterDescriptor(Type functionReturnType, IEnumerable<FunctionBinding> bindings, out ParameterDescriptor descriptor)
         {
             descriptor = null;
-
-            var returnBinding = bindings.SingleOrDefault(p => p.Metadata.IsReturn);
-            if (returnBinding == null)
+            if (functionReturnType == typeof(void) || functionReturnType == typeof(Task))
             {
                 return false;
             }
 
+            // Task<T>
             if (typeof(Task).IsAssignableFrom(functionReturnType))
             {
                 if (!(functionReturnType.IsGenericType && functionReturnType.GetGenericTypeDefinition() == typeof(Task<>)))
@@ -206,12 +205,16 @@ namespace Microsoft.Azure.WebJobs.Script.Description
             descriptor = new ParameterDescriptor(ScriptConstants.SystemReturnParameterName, byRefType);
             descriptor.Attributes |= ParameterAttributes.Out;
 
-            Collection<CustomAttributeBuilder> customAttributes = returnBinding.GetCustomAttributes(byRefType);
-            if (customAttributes != null)
+            var returnBinding = bindings.SingleOrDefault(p => p.Metadata.IsReturn);
+            if (returnBinding != null)
             {
-                foreach (var customAttribute in customAttributes)
+                Collection<CustomAttributeBuilder> customAttributes = returnBinding.GetCustomAttributes(byRefType);
+                if (customAttributes != null)
                 {
-                    descriptor.CustomAttributes.Add(customAttribute);
+                    foreach (var customAttribute in customAttributes)
+                    {
+                        descriptor.CustomAttributes.Add(customAttribute);
+                    }
                 }
             }
 

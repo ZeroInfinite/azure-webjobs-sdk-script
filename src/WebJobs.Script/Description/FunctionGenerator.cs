@@ -72,7 +72,8 @@ namespace Microsoft.Azure.WebJobs.Script.Description
                 else
                 {
                     // It's critical to set the proper return type for the binder.
-                    innerReturnType = retValue.Type.GetElementType(); // builder added a MakeByRefType
+                    // The return parameters was added a MakeByRefType, so need to get the inner type.
+                    innerReturnType = retValue.Type.GetElementType();
 
                     // Task<> derives from Task.
                     var actualReturnType = typeof(Task<>).MakeGenericType(innerReturnType);
