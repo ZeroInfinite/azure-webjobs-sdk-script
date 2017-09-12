@@ -186,6 +186,11 @@ namespace Microsoft.Azure.WebJobs.Script.Description
         internal static bool TryCreateReturnValueParameterDescriptor(Type functionReturnType, IEnumerable<FunctionBinding> bindings, out ParameterDescriptor descriptor)
         {
             descriptor = null;
+            if (functionReturnType == typeof(Microsoft.FSharp.Core.Unit) ||
+                functionReturnType == typeof(Task<Microsoft.FSharp.Core.Unit>))
+            {
+                return false;
+            }
             if (functionReturnType == typeof(void) || functionReturnType == typeof(Task))
             {
                 return false;
